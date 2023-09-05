@@ -1,0 +1,6 @@
+{
+    "devDependencies": {
+        "dbmate": "^2.6.0"
+    },
+    "scripts": {}
+}
