@@ -7,6 +7,7 @@ import (
 	db "postman/amzn/db/sqlc"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -28,7 +29,7 @@ func (s *Service) RegisterHandlers(router *gin.Engine) {
 }
 
 type apiUser struct {
-	ID        int64          `json:"id"`
+	ID        uuid.UUID      `json:"id"`
 	Username  string         `json:"username"`
 	Password  string         `pg:"-" binding:"required,min=7,max=32"`
     Email     string		 `json:"email"`
@@ -41,14 +42,14 @@ type loginUser struct {
 }
 
 type returnUser struct {
-	ID        int64          `json:"id"`
+	ID        uuid.UUID      `json:"id"`
 	Username  string         `json:"username"`
 	Email     string		 `json:"email"`
 	PhoneNum  string         `json:"phoneNum"`
 }
 
 type changePwd struct {
-	ID        int64          `json:"id"`
+	ID        uuid.UUID      `json:"id"`
 	Password  string         `json:"password"`
 	OldPwd    string		 `json:"oldPwd"`
 }
@@ -72,7 +73,7 @@ func fromGetDB(user db.GetUserRow) *returnUser {
 }
 
 type pathParameters struct {
-	ID int64 `uri:"id" binding:"required"`
+	ID uuid.UUID `uri:"id"`
 }
 
 func (s *Service) CreateUser(c *gin.Context) {
@@ -83,7 +84,7 @@ func (s *Service) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Validate request
+	// Server side validation (client side validation lol)
 	if err := ValidateUserRequest(request); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
@@ -140,26 +141,27 @@ func (s *Service) GetUser(c *gin.Context) {
 }
 
 func (s *Service) DeleteUser(c *gin.Context) {
-	// Parse request
-	var pathParams pathParameters
-	if err := c.ShouldBindUri(&pathParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    // explicit conversion from string to uuid.UUID
+    idStr := c.Param("id")
+    id, err := uuid.Parse(idStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Delete user
-	if err := s.queries.DeleteUser(context.Background(), pathParams.ID); err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
+    // Delete user
+    if err := s.queries.DeleteUser(context.Background(), id); err != nil {
+        if err == sql.ErrNoRows {
+            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+            return
+        }
 
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-		return
-	}
+        c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Build response
-	c.Status(http.StatusOK)
+    // return 200 OK
+    c.Status(http.StatusOK)
 }
 
 func (s *Service) UpdateUser(c *gin.Context) {

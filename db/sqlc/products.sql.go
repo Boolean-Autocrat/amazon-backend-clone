@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createProduct = `-- name: CreateProduct :one
@@ -55,7 +57,7 @@ const deleteProduct = `-- name: DeleteProduct :exec
 DELETE FROM products WHERE id = $1
 `
 
-func (q *Queries) DeleteProduct(ctx context.Context, id int64) error {
+func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteProduct, id)
 	return err
 }
@@ -64,7 +66,7 @@ const getProduct = `-- name: GetProduct :one
 SELECT id, name, price, description, image, category, stock, created_at FROM products WHERE id = $1
 `
 
-func (q *Queries) GetProduct(ctx context.Context, id int64) (Product, error) {
+func (q *Queries) GetProduct(ctx context.Context, id uuid.UUID) (Product, error) {
 	row := q.db.QueryRowContext(ctx, getProduct, id)
 	var i Product
 	err := row.Scan(
@@ -188,13 +190,13 @@ UPDATE products SET name = $1, price = $2, description = $3, image = $4, categor
 `
 
 type UpdateProductParams struct {
-	Name        string `json:"name"`
-	Price       int32  `json:"price"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Category    string `json:"category"`
-	Stock       int32  `json:"stock"`
-	ID          int64  `json:"id"`
+	Name        string    `json:"name"`
+	Price       int32     `json:"price"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Category    string    `json:"category"`
+	Stock       int32     `json:"stock"`
+	ID          uuid.UUID `json:"id"`
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {

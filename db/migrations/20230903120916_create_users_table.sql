@@ -1,29 +1,32 @@
 -- migrate:up
 CREATE TABLE "users" (
-    "id" bigserial PRIMARY KEY,
+    "id" uuid DEFAULT uuid_generate_v4(),
     "username" varchar NOT NULL UNIQUE,
     "password" varchar NOT NULL,
     "email" varchar NOT NULL DEFAULT '' UNIQUE,
     "phone_num" varchar NOT NULL DEFAULT '' UNIQUE,
-    "created_at" timestamp NOT NULL DEFAULT (now())
+    "created_at" timestamp NOT NULL DEFAULT (now()),
+    PRIMARY KEY ("id")
 );
 
 CREATE TABLE "products" (
-    "id" bigserial PRIMARY KEY,
+    "id" uuid DEFAULT uuid_generate_v4(),
     "name" varchar NOT NULL,
     "price" integer NOT NULL,
     "description" varchar NOT NULL DEFAULT '',
     "image" varchar NOT NULL DEFAULT '',
     "category" varchar NOT NULL DEFAULT '',
     "stock" integer NOT NULL,
-    "created_at" timestamp NOT NULL DEFAULT (now())
+    "created_at" timestamp NOT NULL DEFAULT (now()),
+    PRIMARY KEY ("id")
 );
 
 CREATE TABLE "user_cart" (
-    "id" bigserial PRIMARY KEY,
-    "user_id" integer NOT NULL,
-    "product_id" integer NOT NULL,
-    "quantity" integer NOT NULL
+    "id" uuid DEFAULT uuid_generate_v4(),
+    "user_id" uuid NOT NULL,
+    "product_id" uuid NOT NULL,
+    "quantity" integer NOT NULL,
+    PRIMARY KEY ("id")
 );
 
 ALTER TABLE "user_cart" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

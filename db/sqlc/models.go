@@ -6,10 +6,12 @@ package db
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Product struct {
-	ID          int64     `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	Price       int32     `json:"price"`
 	Description string    `json:"description"`
@@ -20,7 +22,7 @@ type Product struct {
 }
 
 type User struct {
-	ID        int64     `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Username  string    `json:"username"`
 	Password  string    `json:"password"`
 	Email     string    `json:"email"`
@@ -29,8 +31,8 @@ type User struct {
 }
 
 type UserCart struct {
-	ID        int64 `json:"id"`
-	UserID    int32 `json:"userId"`
-	ProductID int32 `json:"productId"`
-	Quantity  int32 `json:"quantity"`
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"userId"`
+	ProductID uuid.UUID `json:"productId"`
+	Quantity  int32     `json:"quantity"`
 }

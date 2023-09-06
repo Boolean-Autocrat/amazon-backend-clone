@@ -5,6 +5,7 @@ import (
 	db "postman/amzn/db/sqlc"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -16,23 +17,25 @@ func NewService(queries *db.Queries) *Service {
 }
 
 func (s *Service) RegisterHandlers(router *gin.Engine) {
-	router.POST("/product/create", s.CreateProduct)
-	router.GET("/product/:id", s.GetProduct)
-	router.PUT("/product/:id", s.UpdateProduct)
-	router.DELETE("/product/:id", s.DeleteProduct)
+	router.POST("/product/create", s.CreateProductHandler)
+	router.GET("/product/:id", s.GetProductHandler)
+	router.PUT("/product/:id", s.UpdateProductHandler)
+	router.DELETE("/product/:id", s.DeleteProductHandler)
 }
 
 type apiProduct struct {
-	Name        string `json:"name"`
-	Price       int32  `json:"price"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Category    string `json:"category"`
-	Stock       int32  `json:"stock"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name" binding:"required"`
+	Price       int32     `json:"price" binding:"required"`
+	Description string    `json:"description" binding:"required"`
+	Image       string    `json:"image" binding:"required"`
+	Category    string 	  `json:"category" binding:"required"`
+	Stock       int32     `json:"stock" binding:"required"`
 }
 
 func fromDB(product db.Product) *apiProduct {
 	return &apiProduct{
+		ID:          product.ID,
 		Name:        product.Name,
 		Price:       product.Price,
 		Description: product.Description,
@@ -43,12 +46,23 @@ func fromDB(product db.Product) *apiProduct {
 }
 
 type pathParameters struct {
-	ID int64 `uri:"id" binding:"required"`
+	ID uuid.UUID `uri:"id" binding:"required"`
 }
 
-func (s *Service) CreateProduct(c *gin.Context) {
+func (s *Service) CreateProductHandler(c *gin.Context) {
 	var request apiProduct
+	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
+		if err := request.ValidateProductRequest(); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := request.ValidateProductUpdateRequest(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -70,7 +84,7 @@ func (s *Service) CreateProduct(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func (s *Service) GetProduct(c *gin.Context) {
+func (s *Service) GetProductHandler(c *gin.Context) {
 	var params pathParameters
 	if err := c.ShouldBindUri(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -87,12 +101,13 @@ func (s *Service) GetProduct(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, response)
 }
 
-func (s *Service) UpdateProduct(c *gin.Context) {
-	var params pathParameters
-	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (s *Service) UpdateProductHandler(c *gin.Context) {
+	idStr := c.Param("id")
+    id, err := uuid.Parse(idStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
 	var request apiProduct
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -101,7 +116,7 @@ func (s *Service) UpdateProduct(c *gin.Context) {
 	}
 
 	product, err := s.queries.UpdateProduct(c, db.UpdateProductParams{
-		ID:          params.ID,
+		ID:          id,
 		Name:        request.Name,
 		Price:       request.Price,
 		Description: request.Description,
@@ -118,15 +133,16 @@ func (s *Service) UpdateProduct(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, response)
 }
 
-func (s *Service) DeleteProduct(c *gin.Context) {
-	var params pathParameters
-	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (s *Service) DeleteProductHandler(c *gin.Context) {
+	idStr := c.Param("id")
+    id, err := uuid.Parse(idStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	err := s.queries.DeleteProduct(c, params.ID)
-	if err != nil {
+	delerr := s.queries.DeleteProduct(c, id)
+	if delerr != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}

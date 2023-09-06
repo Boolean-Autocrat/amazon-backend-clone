@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const changePassword = `-- name: ChangePassword :exec
@@ -16,8 +18,8 @@ WHERE id = $2
 `
 
 type ChangePasswordParams struct {
-	Password string `json:"password"`
-	ID       int64  `json:"id"`
+	Password string    `json:"password"`
+	ID       uuid.UUID `json:"id"`
 }
 
 func (q *Queries) ChangePassword(ctx context.Context, arg ChangePasswordParams) error {
@@ -43,10 +45,10 @@ type CreateUserParams struct {
 }
 
 type CreateUserRow struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	PhoneNum string `json:"phoneNum"`
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	PhoneNum string    `json:"phoneNum"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
@@ -71,7 +73,7 @@ DELETE FROM users
 WHERE id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
+func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
@@ -81,7 +83,7 @@ SELECT password FROM users
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetPassword(ctx context.Context, id int64) (string, error) {
+func (q *Queries) GetPassword(ctx context.Context, id uuid.UUID) (string, error) {
 	row := q.db.QueryRowContext(ctx, getPassword, id)
 	var password string
 	err := row.Scan(&password)
@@ -94,13 +96,13 @@ WHERE id = $1 LIMIT 1
 `
 
 type GetUserRow struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	PhoneNum string `json:"phoneNum"`
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	PhoneNum string    `json:"phoneNum"`
 }
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
+func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (GetUserRow, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i GetUserRow
 	err := row.Scan(
@@ -117,9 +119,9 @@ SELECT id FROM users
 WHERE username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserID(ctx context.Context, username string) (int64, error) {
+func (q *Queries) GetUserID(ctx context.Context, username string) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, getUserID, username)
-	var id int64
+	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
@@ -133,10 +135,10 @@ WHERE id = $4
 `
 
 type UpdateUserParams struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	PhoneNum string `json:"phoneNum"`
-	ID       int64  `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	PhoneNum string    `json:"phoneNum"`
+	ID       uuid.UUID `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
