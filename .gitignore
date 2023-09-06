@@ -1,5 +1,5 @@
 .env
 node_modules
-amzn.exe
-amzn.exe~
+*.exe
+*.exe~
 package-lock.json
