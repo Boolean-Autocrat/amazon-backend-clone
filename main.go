@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"postman/amzn/api/products"
-	"postman/amzn/api/users"
+	"postman/amzn/api/userAuth"
 	db "postman/amzn/db/sqlc"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +26,7 @@ func main() {
 
 	// Instantiate the user service
 	queries := db.New(postgres.DB)
-	userService := users.NewService(queries)
+	userService := userAuth.NewService(queries)
 	productService := products.NewService(queries)
 
 	// Register our service handlers to the router

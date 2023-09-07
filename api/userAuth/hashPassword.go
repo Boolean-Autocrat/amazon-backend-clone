@@ -1,4 +1,4 @@
-package users
+package userAuth
 
 import (
 	"golang.org/x/crypto/bcrypt"

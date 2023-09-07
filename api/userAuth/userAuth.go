@@ -1,4 +1,4 @@
-package users
+package userAuth
 
 import (
 	"context"
@@ -19,13 +19,14 @@ func NewService(queries *db.Queries) *Service {
 }
 
 func (s *Service) RegisterHandlers(router *gin.Engine) {
-	router.POST("/user/register", s.CreateUser)
-	router.GET("/user/:id", s.GetUser)
-	router.PUT("/user/:id", s.UpdateUser)
-	router.DELETE("/user/:id", s.DeleteUser)
-	router.POST("/user/login", s.LoginUser)
-	router.POST("/user/logout", s.LogoutUser)
-	router.POST("/user/changepwd", s.ChangePassword)
+	router.POST("/auth/register", s.CreateUser)
+	router.POST("/auth/login", s.LoginUser)
+	router.POST("/auth/logout", s.LogoutUser)
+	router.POST("/auth/changepassword", s.ChangePassword)
+
+	router.GET("/profile/:id", s.GetUser)
+	router.PUT("/profile/edit/:id", s.UpdateUser)
+	router.DELETE("/profile/:id", s.DeleteUser)
 }
 
 type apiUser struct {
@@ -72,12 +73,7 @@ func fromGetDB(user db.GetUserRow) *returnUser {
 	}
 }
 
-type pathParameters struct {
-	ID uuid.UUID `uri:"id"`
-}
-
 func (s *Service) CreateUser(c *gin.Context) {
-	// Parse request
 	var request apiUser
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -117,14 +113,15 @@ func (s *Service) CreateUser(c *gin.Context) {
 
 func (s *Service) GetUser(c *gin.Context) {
 	// Parse request
-	var pathParams pathParameters
-	if err := c.ShouldBindUri(&pathParams); err != nil {
+	idStr := c.Param("id")
+    id, err := uuid.Parse(idStr)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Get user by username
-	user, err := s.queries.GetUser(context.Background(), pathParams.ID)
+	user, err := s.queries.GetUser(context.Background(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -166,18 +163,19 @@ func (s *Service) DeleteUser(c *gin.Context) {
 
 func (s *Service) UpdateUser(c *gin.Context) {
 	// Parse request
-	var pathParams pathParameters
-	if err := c.ShouldBindUri(&pathParams); err != nil {
+	idStr := c.Param("id")
+    id, err := uuid.Parse(idStr)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var request apiUser
+	var request returnUser
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := ValidateUserRequest(request); err != nil {
+	if err := ValidateUpdateRequest(request); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
@@ -187,16 +185,13 @@ func (s *Service) UpdateUser(c *gin.Context) {
 		Username: request.Username,
 		Email:    request.Email,
 		PhoneNum: request.PhoneNum,
-		ID:   pathParams.ID,
+		ID:   id,
 	}
 	if err := s.queries.UpdateUser(context.Background(), params); err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-
-		
-
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
@@ -228,7 +223,6 @@ func (s *Service) LogoutUser(c *gin.Context) {
 }
 
 func (s *Service) ChangePassword(c *gin.Context) {
-		// Parse request
 	var request changePwd
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
