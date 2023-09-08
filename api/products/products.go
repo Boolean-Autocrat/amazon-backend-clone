@@ -1,8 +1,10 @@
 package products
 
 import (
+	"database/sql"
 	"net/http"
 	db "postman/amzn/db/sqlc"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,10 +19,15 @@ func NewService(queries *db.Queries) *Service {
 }
 
 func (s *Service) RegisterHandlers(router *gin.Engine) {
-	router.POST("/product/create", s.CreateProductHandler)
-	router.GET("/product/:id", s.GetProductHandler)
-	router.PUT("/product/:id", s.UpdateProductHandler)
-	router.DELETE("/product/:id", s.DeleteProductHandler)
+	router.GET("/products", s.ListProductsHandler)
+	router.GET("/products/:id", s.GetProductHandler)
+	router.GET("/products/search", s.SearchProductsHandler)
+	router.GET("/products/categories", s.ListProductCategoriesHandler)
+	router.GET("/products/category/:category", s.GetProductCategoryHandler)
+
+	router.POST("/admin/products/create", s.CreateProductHandler)
+	router.PUT("/admin/product/:id", s.UpdateProductHandler)
+	router.DELETE("/admin/product/:id", s.DeleteProductHandler)
 }
 
 type apiProduct struct {
@@ -48,6 +55,66 @@ func fromDB(product db.Product) *apiProduct {
 type pathParameters struct {
 	ID uuid.UUID `uri:"id" binding:"required"`
 }
+
+func (s *Service) ListProductsHandler(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	offset, _ := strconv.Atoi(c.Query("offset"))
+	if limit == 0 || offset == 0 {
+		limit = 10
+		offset = 0
+	}
+	params := db.GetProductsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	}
+	products, err := s.queries.GetProducts(c, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []apiProduct
+	for _, product := range products {
+		response = append(response, *fromDB(product))
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Service) SearchProductsHandler(c *gin.Context) {
+	name := c.Query("q")
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	offset, _ := strconv.Atoi(c.Query("offset"))
+	if limit == 0 || offset == 0 {
+		limit = 10
+		offset = 0
+	}
+	params := db.SearchProductsParams{
+		Name: "%" + name + "%",
+		Limit: int32(limit),
+		Offset: int32(offset),
+	}
+	products, err := s.queries.SearchProducts(c, params)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []apiProduct
+	for _, product := range products {
+		response = append(response, *fromDB(product))
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Service) ListProductCategoriesHandler(c *gin.Context) {}
+
+func (s *Service) GetProductCategoryHandler(c *gin.Context) {}
 
 func (s *Service) CreateProductHandler(c *gin.Context) {
 	var request apiProduct
