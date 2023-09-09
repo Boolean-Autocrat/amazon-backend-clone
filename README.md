@@ -3,9 +3,9 @@
 - [x] User Auth Endpoints
 - [x] User Profile Endpoints
 - [x] Products Endpoints
-- [] Orders Endpoints
-- [] Admin Users/Orders Endpoints
-- [] Cart Endpoints
+- [ ] Orders Endpoints
+- [ ] Admin Users/Orders Endpoints
+- [ ] Cart Endpoints
 
 # Run Locally
 
