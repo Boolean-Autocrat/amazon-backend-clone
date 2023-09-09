@@ -1,4 +1,4 @@
-package userAuth
+package auth
 
 import (
 	"context"
@@ -23,10 +23,6 @@ func (s *Service) RegisterHandlers(router *gin.Engine) {
 	router.POST("/auth/login", s.LoginUser)
 	router.POST("/auth/logout", s.LogoutUser)
 	router.POST("/auth/changepassword", s.ChangePassword)
-
-	router.GET("/profile/:id", s.GetUser)
-	router.PUT("/profile/edit/:id", s.UpdateUser)
-	router.DELETE("/profile/:id", s.DeleteUser)
 }
 
 type apiUser struct {
@@ -49,22 +45,13 @@ type returnUser struct {
 	PhoneNum  string         `json:"phoneNum"`
 }
 
-type changePwd struct {
+type changePassword struct {
 	ID        uuid.UUID      `json:"id"`
 	Password  string         `json:"password"`
 	OldPwd    string		 `json:"oldPwd"`
 }
 
 func fromCreateDB(user db.CreateUserRow) *returnUser {
-	return &returnUser{
-		ID: 	   user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		PhoneNum:  user.PhoneNum,
-	}
-}
-
-func fromGetDB(user db.GetUserRow) *returnUser {
 	return &returnUser{
 		ID: 	   user.ID,
 		Username:  user.Username,
@@ -80,7 +67,7 @@ func (s *Service) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Server side validation (client side validation lol)
+	// Server side validation (client validation lol)
 	if err := ValidateUserRequest(request); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
@@ -102,102 +89,18 @@ func (s *Service) CreateUser(c *gin.Context) {
 	}
 	user, err := s.queries.CreateUser(context.Background(), params)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		errMessage := AuthErrMessage(err.Error())
+		if errMessage != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": errMessage})
+			return
+		}
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "something went wrong"})
 		return
 	}
 
 	// Build response
 	response := fromCreateDB(user)
 	c.IndentedJSON(http.StatusCreated, response)
-}
-
-func (s *Service) GetUser(c *gin.Context) {
-	// Parse request
-	idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get user by username
-	user, err := s.queries.GetUser(context.Background(), id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Build response
-	response := fromGetDB(user)
-	c.IndentedJSON(http.StatusOK, response)
-}
-
-func (s *Service) DeleteUser(c *gin.Context) {
-    // explicit conversion from string to uuid.UUID
-    idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-
-    // Delete user
-    if err := s.queries.DeleteUser(context.Background(), id); err != nil {
-        if err == sql.ErrNoRows {
-            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-            return
-        }
-
-        c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-        return
-    }
-
-    // return 200 OK
-    c.Status(http.StatusOK)
-}
-
-func (s *Service) UpdateUser(c *gin.Context) {
-	// Parse request
-	idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var request returnUser
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := ValidateUpdateRequest(request); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-
-	// Update user
-	params := db.UpdateUserParams{
-		Username: request.Username,
-		Email:    request.Email,
-		PhoneNum: request.PhoneNum,
-		ID:   id,
-	}
-	if err := s.queries.UpdateUser(context.Background(), params); err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Build response
-	c.Status(http.StatusOK)
 }
 
 func (s *Service) LoginUser(c *gin.Context) {
@@ -223,7 +126,7 @@ func (s *Service) LogoutUser(c *gin.Context) {
 }
 
 func (s *Service) ChangePassword(c *gin.Context) {
-	var request changePwd
+	var request changePassword
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

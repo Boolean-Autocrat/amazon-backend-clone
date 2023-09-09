@@ -24,10 +24,6 @@ func (s *Service) RegisterHandlers(router *gin.Engine) {
 	router.GET("/products/search", s.SearchProductsHandler)
 	router.GET("/products/categories", s.ListProductCategoriesHandler)
 	router.GET("/products/category/:category", s.GetProductCategoryHandler)
-
-	router.POST("/admin/products/create", s.CreateProductHandler)
-	router.PUT("/admin/product/:id", s.UpdateProductHandler)
-	router.DELETE("/admin/product/:id", s.DeleteProductHandler)
 }
 
 type apiProduct struct {
@@ -81,6 +77,23 @@ func (s *Service) ListProductsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (s *Service) GetProductHandler(c *gin.Context) {
+	var params pathParameters
+	if err := c.ShouldBindUri(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	product, err := s.queries.GetProduct(c, params.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := fromDB(product)
+	c.IndentedJSON(http.StatusOK, response)
+}
+
 func (s *Service) SearchProductsHandler(c *gin.Context) {
 	name := c.Query("q")
 	limit, _ := strconv.Atoi(c.Query("limit"))
@@ -115,104 +128,3 @@ func (s *Service) SearchProductsHandler(c *gin.Context) {
 func (s *Service) ListProductCategoriesHandler(c *gin.Context) {}
 
 func (s *Service) GetProductCategoryHandler(c *gin.Context) {}
-
-func (s *Service) CreateProductHandler(c *gin.Context) {
-	var request apiProduct
-	
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		if err := request.ValidateProductRequest(); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := request.ValidateProductUpdateRequest(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	product, err := s.queries.CreateProduct(c, db.CreateProductParams{
-		Name:        request.Name,
-		Price:       request.Price,
-		Description: request.Description,
-		Image:       request.Image,
-		Category:    request.Category,
-		Stock:       request.Stock,
-	})
-	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-		return
-	}
-
-	response := fromDB(product)
-	c.IndentedJSON(http.StatusCreated, response)
-}
-
-func (s *Service) GetProductHandler(c *gin.Context) {
-	var params pathParameters
-	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	product, err := s.queries.GetProduct(c, params.ID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	response := fromDB(product)
-	c.IndentedJSON(http.StatusOK, response)
-}
-
-func (s *Service) UpdateProductHandler(c *gin.Context) {
-	idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-
-	var request apiProduct
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	product, err := s.queries.UpdateProduct(c, db.UpdateProductParams{
-		ID:          id,
-		Name:        request.Name,
-		Price:       request.Price,
-		Description: request.Description,
-		Image:       request.Image,
-		Category:    request.Category,
-		Stock:       request.Stock,
-	})
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	response := fromDB(product)
-	c.IndentedJSON(http.StatusOK, response)
-}
-
-func (s *Service) DeleteProductHandler(c *gin.Context) {
-	idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-
-	delerr := s.queries.DeleteProduct(c, id)
-	if delerr != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.Status(http.StatusOK)
-}

@@ -29,9 +29,19 @@ CREATE TABLE "user_cart" (
     PRIMARY KEY ("id")
 );
 
+CREATE TABLE "orders" (
+    "id" uuid DEFAULT uuid_generate_v4(),
+    "user_id" uuid NOT NULL,
+    "product_id" uuid NOT NULL,
+    "quantity" integer NOT NULL,
+    "created_at" timestamp NOT NULL DEFAULT (now()),
+    PRIMARY KEY ("id")
+);
+
 ALTER TABLE "user_cart" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "user_cart" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
-
+ALTER TABLE "orders" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
 CREATE INDEX ON "users" ("username");
 CREATE INDEX ON "products" ("name");
