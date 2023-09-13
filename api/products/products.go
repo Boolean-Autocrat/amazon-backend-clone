@@ -49,10 +49,6 @@ func fromDB(product db.Product) *apiProduct {
 	}
 }
 
-type pathParameters struct {
-	ID uuid.UUID `uri:"id" binding:"required"`
-}
-
 func (s *Service) ListProductsHandler(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	offset, _ := strconv.Atoi(c.Query("offset"))
@@ -79,13 +75,14 @@ func (s *Service) ListProductsHandler(c *gin.Context) {
 }
 
 func (s *Service) GetProductHandler(c *gin.Context) {
-	var params pathParameters
-	if err := c.ShouldBindUri(&params); err != nil {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	product, err := s.queries.GetProduct(context.Background(), params.ID)
+	product, err := s.queries.GetProduct(context.Background(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -109,10 +106,13 @@ func (s *Service) SearchProductsHandler(c *gin.Context) {
 		Offset: int32(offset),
 	}
 	products, err := s.queries.SearchProducts(context.Background(), params)
-
+	if products == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no results found"})
+		return
+	}
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "no results found"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -126,6 +126,49 @@ func (s *Service) SearchProductsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (s *Service) ListProductCategoriesHandler(c *gin.Context) {}
+func (s *Service) ListProductCategoriesHandler(c *gin.Context) {
+	categories, err := s.queries.ListProductCategories(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-func (s *Service) GetProductCategoryHandler(c *gin.Context) {}
+	var response []string
+	response = append(response, categories...)
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Service) GetProductCategoryHandler(c *gin.Context) {
+	category := c.Param("category")
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	offset, _ := strconv.Atoi(c.Query("offset"))
+	if limit == 0 || offset == 0 {
+		limit = 10
+		offset = 0
+	}
+	params := db.GetProductsByCategoryParams{
+		Category: category,
+		Limit: int32(limit),
+		Offset: int32(offset),
+	}
+	products, err := s.queries.GetProductsByCategory(context.Background(), params)
+	if products == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no results found"})
+		return
+	}
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no results found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response []apiProduct
+	for _, product := range products {
+		response = append(response, *fromDB(product))
+	}
+	c.JSON(http.StatusOK, response)
+}

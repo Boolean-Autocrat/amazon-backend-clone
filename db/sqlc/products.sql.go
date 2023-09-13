@@ -143,6 +143,75 @@ func (q *Queries) GetProducts(ctx context.Context, arg GetProductsParams) ([]Pro
 	return items, nil
 }
 
+const getProductsByCategory = `-- name: GetProductsByCategory :many
+SELECT id, name, price, description, image, category, stock, created_at FROM products WHERE category = $1 LIMIT $2 OFFSET $3
+`
+
+type GetProductsByCategoryParams struct {
+	Category string `json:"category"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+func (q *Queries) GetProductsByCategory(ctx context.Context, arg GetProductsByCategoryParams) ([]Product, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsByCategory, arg.Category, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Price,
+			&i.Description,
+			&i.Image,
+			&i.Category,
+			&i.Stock,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductCategories = `-- name: ListProductCategories :many
+SELECT DISTINCT category FROM products
+`
+
+func (q *Queries) ListProductCategories(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listProductCategories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var category string
+		if err := rows.Scan(&category); err != nil {
+			return nil, err
+		}
+		items = append(items, category)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchProducts = `-- name: SearchProducts :many
 SELECT id, name, price, description, image, category, stock, created_at FROM products WHERE name ILIKE $1 LIMIT $2 OFFSET $3
 `

@@ -24,3 +24,9 @@ SELECT * FROM products WHERE name = $1;
 
 -- name: SearchProducts :many
 SELECT * FROM products WHERE name ILIKE $1 LIMIT $2 OFFSET $3;
+
+-- name: ListProductCategories :many
+SELECT DISTINCT category FROM products;
+
+-- name: GetProductsByCategory :many
+SELECT * FROM products WHERE category = $1 LIMIT $2 OFFSET $3;
