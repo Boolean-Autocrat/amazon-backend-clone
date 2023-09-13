@@ -6,8 +6,8 @@ import (
 )
 
 func ValidateUserRequest(req apiUser) error {
-	if len(req.Password) < 8 {
-		return errors.New("password must be at least 8 characters long")
+	if IsPasswordValid(req.Password) != nil {
+		return IsPasswordValid(req.Password)
 	}
 	if len(req.Username) < 3 {
 		return errors.New("username must be at least 3 characters long")

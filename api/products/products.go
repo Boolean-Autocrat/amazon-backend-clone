@@ -1,6 +1,7 @@
 package products
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
 	db "postman/amzn/db/sqlc"
@@ -63,7 +64,7 @@ func (s *Service) ListProductsHandler(c *gin.Context) {
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}
-	products, err := s.queries.GetProducts(c, params)
+	products, err := s.queries.GetProducts(context.Background(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -84,7 +85,7 @@ func (s *Service) GetProductHandler(c *gin.Context) {
 		return
 	}
 
-	product, err := s.queries.GetProduct(c, params.ID)
+	product, err := s.queries.GetProduct(context.Background(), params.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -107,7 +108,7 @@ func (s *Service) SearchProductsHandler(c *gin.Context) {
 		Limit: int32(limit),
 		Offset: int32(offset),
 	}
-	products, err := s.queries.SearchProducts(c, params)
+	products, err := s.queries.SearchProducts(context.Background(), params)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

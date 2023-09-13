@@ -31,6 +31,7 @@ CREATE TABLE "user_cart" (
 
 CREATE TABLE "orders" (
     "id" uuid DEFAULT uuid_generate_v4(),
+    "status" varchar NOT NULL DEFAULT 'pending',
     "user_id" uuid NOT NULL,
     "product_id" uuid NOT NULL,
     "quantity" integer NOT NULL,
@@ -49,6 +50,7 @@ CREATE INDEX ON "user_cart" ("user_id");
 CREATE INDEX ON "user_cart" ("product_id");
 
 -- migrate:down
+DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS user_cart;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS products;

@@ -13,6 +13,9 @@ func ValidateUpdateRequest(req returnUser) error {
 	if !user.IsValidEmail(req.Email) {
 		return errors.New("invalid email format")
 	}
+	if !user.IsValidPhoneNum(req.PhoneNum) {
+		return errors.New("invalid phone number format")
+	}
 
 	return nil
 }

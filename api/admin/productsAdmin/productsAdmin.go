@@ -1,6 +1,7 @@
 package productsadmin
 
 import (
+	"context"
 	"net/http"
 	db "postman/amzn/db/sqlc"
 
@@ -61,7 +62,7 @@ func (s *Service) CreateProductHandler(c *gin.Context) {
 		return
 	}
 
-	product, err := s.queries.CreateProduct(c, db.CreateProductParams{
+	product, err := s.queries.CreateProduct(context.Background(), db.CreateProductParams{
 		Name:        request.Name,
 		Price:       request.Price,
 		Description: request.Description,
@@ -92,7 +93,7 @@ func (s *Service) UpdateProductHandler(c *gin.Context) {
 		return
 	}
 
-	product, err := s.queries.UpdateProduct(c, db.UpdateProductParams{
+	product, err := s.queries.UpdateProduct(context.Background(), db.UpdateProductParams{
 		ID:          id,
 		Name:        request.Name,
 		Price:       request.Price,
@@ -118,7 +119,7 @@ func (s *Service) DeleteProductHandler(c *gin.Context) {
 		return
 	}
 
-	delerr := s.queries.DeleteProduct(c, id)
+	delerr := s.queries.DeleteProduct(context.Background(), id)
 	if delerr != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
