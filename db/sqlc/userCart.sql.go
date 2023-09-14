@@ -89,3 +89,17 @@ func (q *Queries) GetUserCarts(ctx context.Context, userID uuid.UUID) ([]UserCar
 	}
 	return items, nil
 }
+
+const updateUserCart = `-- name: UpdateUserCart :exec
+UPDATE user_cart SET quantity = $1 WHERE id = $2
+`
+
+type UpdateUserCartParams struct {
+	Quantity int32     `json:"quantity"`
+	ID       uuid.UUID `json:"id"`
+}
+
+func (q *Queries) UpdateUserCart(ctx context.Context, arg UpdateUserCartParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserCart, arg.Quantity, arg.ID)
+	return err
+}

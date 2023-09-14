@@ -6,6 +6,8 @@ import (
 	ordersadmin "postman/amzn/api/admin/ordersAdmin"
 	productsadmin "postman/amzn/api/admin/productsAdmin"
 	usersadmin "postman/amzn/api/admin/usersAdmin"
+	"postman/amzn/api/cart"
+	"postman/amzn/api/middleware"
 	"postman/amzn/api/orders"
 	"postman/amzn/api/products"
 	"postman/amzn/api/user/auth"
@@ -48,8 +50,14 @@ func main() {
 	// Orders
 	ordersService := orders.NewService(queries)
 
+	//Cart
+	cartService := cart.NewService(queries)
+
 	// Registering service handlers to the Gin router
 	router := gin.Default()
+	
+	router.Use(middleware.AuthMiddleware())
+
 	adminOrdersService.RegisterHandlers(router)
 	adminUsersService.RegisterHandlers(router)
 	adminProductsService.RegisterHandlers(router)
@@ -61,5 +69,7 @@ func main() {
 
 	ordersService.RegisterHandlers(router)
 
+	cartService.RegisterHandlers(router)
+	
 	router.Run()
 }

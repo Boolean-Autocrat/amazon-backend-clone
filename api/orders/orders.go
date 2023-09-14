@@ -46,19 +46,23 @@ func (s *Service) CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	// verify user exists
 	_, err := s.queries.GetUser(context.Background(), req.UserID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
 		return
 	}
-
-	// verify product exists
-	_, err = s.queries.GetProduct(context.Background(), req.ProductID)
+	// verify product exists and check if product is in stock
+	product, err := s.queries.GetProduct(context.Background(), req.ProductID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "product not found"})
 		return
 	}
+	productQuantity := product.Stock
+	if productQuantity < req.Quantity {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product out of stock"})
+		return
+	}
+
 
 	arg := db.CreateOrderParams{
 		UserID:    req.UserID,

@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"net/http"
 	db "postman/amzn/db/sqlc"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -59,6 +61,8 @@ func fromCreateDB(user db.CreateUserRow) *returnUser {
 		PhoneNum:  user.PhoneNum,
 	}
 }
+
+var tokenBlacklist = map[string]bool{}
 
 func (s *Service) CreateUser(c *gin.Context) {
 	var request apiUser
@@ -118,11 +122,32 @@ func (s *Service) LoginUser(c *gin.Context) {
 		return
 	}
 
+	authSecret := "rust-goat"
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(time .Hour * 24 * 15).Unix(),
+	})
+	
+	// Sign and get the complete encoded token as a string using the secret
+	tokenStr, err := token.SignedString([]byte(authSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something went wrong"})
+		return
+	}
+
+	// Set token in cookie
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("token", tokenStr, 3600*24*15, "", "", false, true)
+
 	// Build response
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "login successful, cookie set", "token": tokenStr})
 }
 
 func (s *Service) LogoutUser(c *gin.Context) {
+	tokenString := c.GetHeader("Authorization")
+	tokenBlacklist[tokenString] = true
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 func (s *Service) ChangePassword(c *gin.Context) {
