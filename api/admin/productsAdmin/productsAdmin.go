@@ -131,7 +131,7 @@ func (s *Service) UpdateProductHandler(c *gin.Context) {
 		Name:        request.Name,
 		Price:       request.Price,
 		Description: request.Description,
-		Image:       request.Image,
+		Image:       "",
 		Category:    request.Category,
 		Stock:       request.Stock,
 	})
