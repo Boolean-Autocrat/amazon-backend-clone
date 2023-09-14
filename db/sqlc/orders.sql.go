@@ -123,3 +123,17 @@ func (q *Queries) GetOrders(ctx context.Context, userID uuid.UUID) ([]Order, err
 	}
 	return items, nil
 }
+
+const updateProductStock = `-- name: UpdateProductStock :exec
+UPDATE products SET stock = $1 WHERE id = $2
+`
+
+type UpdateProductStockParams struct {
+	Stock int32     `json:"stock"`
+	ID    uuid.UUID `json:"id"`
+}
+
+func (q *Queries) UpdateProductStock(ctx context.Context, arg UpdateProductStockParams) error {
+	_, err := q.db.ExecContext(ctx, updateProductStock, arg.Stock, arg.ID)
+	return err
+}

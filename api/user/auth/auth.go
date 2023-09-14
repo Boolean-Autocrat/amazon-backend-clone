@@ -143,7 +143,7 @@ func (s *Service) LoginUser(c *gin.Context) {
 }
 
 func (s *Service) LogoutUser(c *gin.Context) {
-	// remove cookie
+	// simply removing the cookie (we don't need to invalidate the token since in real world scenarios, it will rotate frequently)
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("token", "", -1, "", "", false, true)
 }

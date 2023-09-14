@@ -56,7 +56,7 @@ func (s *Service) CreateProductHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	
 	if err := request.ValidateProductUpdateRequest(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -125,5 +125,5 @@ func (s *Service) DeleteProductHandler(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "product deleted"})
 }

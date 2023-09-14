@@ -20,7 +20,7 @@ func NewService(queries *db.Queries) *Service {
 
 func (s *Service) RegisterHandlers(router *gin.Engine) {
 	router.GET("/admin/order/:id", s.AdminGetOrderHandler)
-	router.GET("/admin/orders", s.AdminListOrdersHandler)
+	router.GET("/admin/orders/:id", s.AdminListOrdersHandler)
 	router.PATCH("/admin/order/:id", s.AdminStatusOrderHandler)
 }
 

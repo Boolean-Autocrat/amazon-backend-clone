@@ -9,3 +9,6 @@ SELECT * FROM orders WHERE user_id = $1;
 
 -- name: ChangeOrderStatus :one
 UPDATE orders SET status = $1 WHERE id = $2 RETURNING *;
+
+-- name: UpdateProductStock :exec
+UPDATE products SET stock = $1 WHERE id = $2;

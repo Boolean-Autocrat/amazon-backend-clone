@@ -75,6 +75,17 @@ func (s *Service) CreateOrderHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// update stock
+	arg2 := db.UpdateProductStockParams{
+		ID:    req.ProductID,
+		Stock: productQuantity - req.Quantity,
+	}
+	_ = s.queries.UpdateProductStock(context.Background(), arg2)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, order)
 }

@@ -24,9 +24,10 @@ func (s *Service) RegisterHandlers(router *gin.Engine) {
 	router.DELETE("/admin/user/:id", s.DeleteUserHandler)
 }
 
-func (s *Service) AdminGetUserByUsernameHandler(c *gin.Context) {
-	username := c.Param("username")
-	user, err := s.queries.GetUserID(context.Background(), username)
+
+func (s *Service) AdminUserHandler(c *gin.Context) {
+	id, _ := uuid.Parse(c.Param("id"))
+	user, err := s.queries.GetUser(context.Background(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
@@ -38,9 +39,9 @@ func (s *Service) AdminGetUserByUsernameHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (s *Service) AdminUserHandler(c *gin.Context) {
-	id, _ := uuid.Parse(c.Param("id"))
-	user, err := s.queries.GetUser(context.Background(), id)
+func (s *Service) AdminGetUserByUsernameHandler(c *gin.Context) {
+	username := c.Param("username")
+	user, err := s.queries.GetUserID(context.Background(), username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
