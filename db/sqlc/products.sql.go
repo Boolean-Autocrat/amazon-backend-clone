@@ -11,6 +11,31 @@ import (
 	"github.com/google/uuid"
 )
 
+const addImage = `-- name: AddImage :one
+UPDATE products SET image = $1 WHERE id = $2 RETURNING id, name, price, description, image, category, stock, created_at
+`
+
+type AddImageParams struct {
+	Image string    `json:"image"`
+	ID    uuid.UUID `json:"id"`
+}
+
+func (q *Queries) AddImage(ctx context.Context, arg AddImageParams) (Product, error) {
+	row := q.db.QueryRowContext(ctx, addImage, arg.Image, arg.ID)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Price,
+		&i.Description,
+		&i.Image,
+		&i.Category,
+		&i.Stock,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createProduct = `-- name: CreateProduct :one
 INSERT INTO products 
 (

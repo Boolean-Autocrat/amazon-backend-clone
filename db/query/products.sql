@@ -30,3 +30,6 @@ SELECT DISTINCT category FROM products;
 
 -- name: GetProductsByCategory :many
 SELECT * FROM products WHERE category = $1 LIMIT $2 OFFSET $3;
+
+-- name: AddImage :one
+UPDATE products SET image = $1 WHERE id = $2 RETURNING *;

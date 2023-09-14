@@ -3,6 +3,7 @@ package productsadmin
 import (
 	"context"
 	"net/http"
+	"path/filepath"
 	db "postman/amzn/db/sqlc"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,7 @@ func (s *Service) RegisterHandlers(router *gin.Engine) {
 	router.POST("/admin/products/create", s.CreateProductHandler)
 	router.PUT("/admin/product/:id", s.UpdateProductHandler)
 	router.DELETE("/admin/product/:id", s.DeleteProductHandler)
+	router.POST("/admin/product/:id/upload", s.UploadImageHandler)
 }
 
 type apiProduct struct {
@@ -28,7 +30,7 @@ type apiProduct struct {
 	Name        string    `json:"name" binding:"required"`
 	Price       int32     `json:"price" binding:"required"`
 	Description string    `json:"description" binding:"required"`
-	Image       string    `json:"image" binding:"required"`
+	Image       string    `json:"image"`
 	Category    string    `json:"category" binding:"required"`
 	Stock       int32     `json:"stock" binding:"required"`
 }
@@ -66,7 +68,7 @@ func (s *Service) CreateProductHandler(c *gin.Context) {
 		Name:        request.Name,
 		Price:       request.Price,
 		Description: request.Description,
-		Image:       request.Image,
+		Image:       "",
 		Category:    request.Category,
 		Stock:       request.Stock,
 	})
@@ -77,6 +79,37 @@ func (s *Service) CreateProductHandler(c *gin.Context) {
 
 	response := fromDB(product)
 	c.IndentedJSON(http.StatusCreated, response)
+}
+
+func (s *Service) UploadImageHandler(c *gin.Context) {
+    file, err := c.FormFile("prodimage")
+
+    if err != nil {
+        c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+            "message": "no file received",
+        })
+        return
+    }
+
+    exten := filepath.Ext(file.Filename)
+	newFileName, _ := uuid.Parse(c.Param("id"))
+
+    if err := c.SaveUploadedFile(file, "./images/" + newFileName.String() + exten); err != nil {
+        c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+            "message": "Unable to save the file",
+        })
+        return
+    }
+
+	// updating the image path in the database
+	_, _ = s.queries.AddImage(context.Background(), db.AddImageParams{
+		ID: newFileName,
+		Image: "./images/" + newFileName.String() + exten,
+	})
+
+    c.JSON(http.StatusOK, gin.H{
+        "message": "file saved successfully",
+    })
 }
 
 func (s *Service) UpdateProductHandler(c *gin.Context) {
