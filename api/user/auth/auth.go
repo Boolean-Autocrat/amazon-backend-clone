@@ -62,8 +62,6 @@ func fromCreateDB(user db.CreateUserRow) *returnUser {
 	}
 }
 
-var tokenBlacklist = map[string]bool{}
-
 func (s *Service) CreateUser(c *gin.Context) {
 	var request apiUser
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -145,9 +143,9 @@ func (s *Service) LoginUser(c *gin.Context) {
 }
 
 func (s *Service) LogoutUser(c *gin.Context) {
-	tokenString := c.GetHeader("Authorization")
-	tokenBlacklist[tokenString] = true
-	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+	// remove cookie
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("token", "", -1, "", "", false, true)
 }
 
 func (s *Service) ChangePassword(c *gin.Context) {

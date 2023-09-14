@@ -3,9 +3,11 @@
 - [x] User Auth Endpoints
 - [x] User Profile Endpoints
 - [x] Products Endpoints
-- [ ] Orders Endpoints
-- [ ] Admin Users/Orders Endpoints
-- [ ] Cart Endpoints
+- [x] Orders Endpoints
+- [x] Admin Users/Orders Endpoints
+- [x] Cart Endpoints
+- [x] JWT-Based Authentication w/ server-side cookie-setting
+- [x] Multiple checkpoints and validation
 
 # Run Locally
 
