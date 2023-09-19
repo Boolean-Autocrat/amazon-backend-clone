@@ -19,9 +19,9 @@ func NewService(queries *db.Queries) *Service {
 }
 
 func (s *Service) RegisterHandlers(router *gin.Engine) {
-	router.GET("/profile/:id", s.GetUser)
-	router.PUT("/profile/edit/:id", s.UpdateUser)
-	router.DELETE("/profile/:id", s.DeleteUser)
+	router.GET("/profile", s.GetUser)
+	router.PUT("/profile/edit", s.UpdateUser)
+	router.DELETE("/profile", s.DeleteUser)
 }
 
 type returnUser struct {
@@ -42,8 +42,8 @@ func fromGetDB(user db.GetUserRow) *returnUser {
 
 func (s *Service) GetUser(c *gin.Context) {
 	// Parse request
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	idStr, _ := c.Get("userID")
+	id, err := uuid.Parse(idStr.(string))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -68,8 +68,8 @@ func (s *Service) GetUser(c *gin.Context) {
 
 func (s *Service) UpdateUser(c *gin.Context) {
 	// Parse request
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	idStr, _ := c.Get("userID")
+	id, err := uuid.Parse(idStr.(string))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -106,9 +106,8 @@ func (s *Service) UpdateUser(c *gin.Context) {
 }
 
 func (s *Service) DeleteUser(c *gin.Context) {
-	// explicit conversion from string to uuid.UUID
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	idStr, _ := c.Get("userID")
+	id, err := uuid.Parse(idStr.(string))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

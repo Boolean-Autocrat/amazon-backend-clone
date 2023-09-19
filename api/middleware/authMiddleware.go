@@ -41,6 +41,9 @@ func AuthMiddleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+
+			userID := claims["sub"].(string)
+            c.Set("userID", userID)
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			fmt.Println(err)
