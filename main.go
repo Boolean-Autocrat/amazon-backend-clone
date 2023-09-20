@@ -54,6 +54,7 @@ func main() {
 	cartService := cart.NewService(queries)
 
 	// Registering service handlers to the Gin router
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	
 	router.Use(middleware.AuthMiddleware())
