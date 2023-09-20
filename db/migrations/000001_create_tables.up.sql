@@ -1,4 +1,5 @@
--- migrate:up
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE "users" (
     "id" uuid DEFAULT uuid_generate_v4(),
     "username" varchar NOT NULL UNIQUE,
@@ -48,9 +49,3 @@ CREATE INDEX ON "users" ("username");
 CREATE INDEX ON "products" ("name");
 CREATE INDEX ON "user_cart" ("user_id");
 CREATE INDEX ON "user_cart" ("product_id");
-
--- migrate:down
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS user_cart;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS products;

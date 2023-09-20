@@ -1,0 +1,8 @@
+node_modules
+.gitignore
+*.exe
+*.exe~
+Makefile
+package-lock.json
+package.json
+sqlc.yaml
