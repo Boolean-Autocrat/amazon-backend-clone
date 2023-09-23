@@ -9,6 +9,10 @@
 - [x] JWT-Based Authentication w/ server-side cookie-setting
 - [x] Multiple checkpoints and validation
 
+# API Documentation
+
+The API documentation can be found [here](https://documenter.getpostman.com/view/28952349/2s9YJW4Qna)
+
 # Run Locally
 
 - Run `npm i`
